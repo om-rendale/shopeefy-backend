@@ -102,13 +102,40 @@ app.post('/login',async(req,res)=>{
     }
 })
 
-//task-3 ->create a route to see all products
+//task-3 -> create a route to see all products
 app.get('/products',async(req,res)=>{
     try{
-        const products = await Product.find({});
-        return res.status(200).json({
-            message:"find all the products",
-            products:products
+       const products = await Product.find({});
+       return res.status(200).json({
+        message:"find all the products",
+        products:products
+       }) 
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({message:'Internal server error'})
+    }
+})
+
+//task-4 -> create a route to add a product
+app.post('/add-product',async(req,res)=>{
+    try{
+        const{name, price, image, brand, stock, description} = req.body;
+        const {token} = req.headers;
+
+        const decodedToken = jwt.verify(token,'supersecret');
+        const user = await User.findOne({email:decodedToken.email});
+
+        await Product.create({
+            name,
+            price,
+            description,
+            image,
+            stock,
+            brand,
+            user:user._id
+        });
+        return res.status(201).json({
+            message:'Product added successfully',
         })
     }catch(error){
         console.log(error);
@@ -116,7 +143,116 @@ app.get('/products',async(req,res)=>{
     }
 })
 
+//task-5 create route to see the particular product
+app.get('/product/:id',async(req,res)=>{
+    try{
+        const {id} = req.params;
+         if(!id){
+            return res.status(400).json({message:'Product is missing'});
+         }
 
+         const {token}  = req.headers;
+         const userEmailFromToken = jwt.verify(token,'supersecret');
+         if(userEmailFromToken.email){
+            const product = await Product.findById(id);
+
+            if(!product){
+                return res.status(400).json({message:' Product not found '})
+            }
+
+            return res.status(200).json({message:"success",product});
+         }
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({message:'Internal server error'})
+    }
+})
+
+//task-6 update product
+app.patch("/product/edit/:id", async (req, res) => {
+    const { id } = req.params;
+    const { token } = req.headers;
+    const body = req.body.productData;
+    const name = body.name;
+    const description = body.description;
+    const image = body.image;
+    const price = body.price;
+    const brand = body.brand;
+    const stock = body.stock;
+    const userEmail = jwt.verify(token, "supersecret");
+    try {
+      console.log({
+        name,
+        description,
+        image,
+        price,
+        brand,
+        stock,
+      });
+      if (userEmail.email) {
+        const updatedProduct = await Product.findByIdAndUpdate(id, {
+          name,
+          description,
+          image,
+          price,
+          brand,
+          stock,
+        });
+        res.status(200).json({ message: "Product Updated Succesfully" });
+      }
+    } catch (error) {
+      res.status(400).json({
+        message: "Internal Server Error Occured While Updating Product",
+      });
+    }
+  });
+
+
+   //task-7 -> create route to delete product
+   app.delete('/product/delete/:id',async(req,res)=>{
+    const {id} = req.params;
+    if(!id){
+        return res.status(400).json({message:"product id not found"})
+
+    }
+    try{
+        const deleteProduct = await Product.findByIdAndDelete(id);
+        if(!deleteProduct){
+            res.status(404).json({message:"product not found"});
+        }
+
+        res.status(200).json({message:"product deleted successfully",
+            product:deleteProduct
+        })
+
+    }catch (error) {
+      res.status(400).json({
+        message: "Internal Server Error Occured While Updating Product",
+      });
+    }
+
+  })
+
+  //task-8 create route to search product
+  app.get('/product/search/:keyword',async(req,res)=>{
+    const {keyword} = req.params;
+    try{
+        const products = await Product.find({
+            name:{$regex: keyword, $option:"id"}
+        });
+        if(products.length === 0){
+            return res.status(404).json({message:"Product not found"});
+        }
+        return res.status(200).json({
+            message:'Product found',
+            products:products
+        })
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({message:'Internal server error'})
+    }
+
+  })
 
 const PORT = 8080;
 app.listen(PORT,()=>{

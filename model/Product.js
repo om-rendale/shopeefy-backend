@@ -10,11 +10,11 @@ const productSchema = new mongoose.Schema({
         required:true
     },
     brand:{
-        type:String
+        type:String,   
     },
     stock:{
         type:Number,
-        required:true
+        reqquired:true
     },
     image:{
         type:String,
@@ -23,14 +23,13 @@ const productSchema = new mongoose.Schema({
     description:{
         type:String,
         required:true
-    }
-    ,
+    },
     user:{
-        type:mongoose.Schema.ObjectId,
-        ref:'User'
+      type:mongoose.Schema.ObjectId,
+      ref:'User'  
     }
 })
 
-const Product = mongoose.model('product',productSchema);
+const Product = mongoose.model('Product',productSchema);
 
-module.exports ={Product};
+module.exports = {Product};
